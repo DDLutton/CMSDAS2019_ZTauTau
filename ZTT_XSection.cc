@@ -67,6 +67,9 @@ int main(int argc, char** argv) {
 
   //add the histrograms of lepton and tau visible mass (both for opposite sign and same sign pair )
   EventHisto basicselection("BasicSelection",doMuon);
+  ObjectHisto noCut      ("NoCut", doMuon);
+  ObjectHisto passTrigger("PassTrigger", doMuon);
+  ObjectHisto passTau    ("PassTau", doMuon);
 
 
   TTree *Run_Tree = (TTree*) myFile->Get("EventTree");
@@ -124,13 +127,6 @@ int main(int argc, char** argv) {
       if(!selTauTau && (numTau > 1)) continue; // uncomment this line to get Zll contribution of DY
     }
 
-    //
-    //Trigger
-    //
-    bool PassTrigger = doMuon ? (HLTEleMuX >> 19 & 1) == 1 : (HLTEleMuX >> 0 & 1) == 1;
-    if (!PassTrigger) continue;
-    nPassTrigger += 1;
-
     //Compute Pileup Weight
     float PUWeight = 1;
     if (!isData){
@@ -141,6 +137,17 @@ int main(int argc, char** argv) {
       float PUData_=HistoPUData->GetBinContent(puNUmdata+1);
       PUWeight= PUData_/PUMC_;
     }
+    float eventWeight       = LumiWeight*PUWeight;
+
+    noCut.Fill( eventWeight );
+
+    //
+    //Trigger
+    //
+    bool PassTrigger = doMuon ? (HLTEleMuX >> 19 & 1) == 1 : (HLTEleMuX >> 0 & 1) == 1;
+    if (!PassTrigger) continue;
+    nPassTrigger += 1;
+    passTrigger.Fill( eventWeight );
 
     //
     // Choose Lepton Type
@@ -177,6 +184,8 @@ int main(int argc, char** argv) {
     }
     if(LepMetTranverseMass > 40) { continue; }
     nPassLepMET += 1;
+    passTau.Fill(eventWeight);
+
 
     //ttbar veto with bjet veto
     if(GetBJets()) { continue; }
@@ -185,7 +194,6 @@ int main(int argc, char** argv) {
 
     // Construct the visible mu+tau system
     TLorentzVector LepTauP4 = LeptonP4 + TauP4;
-    float eventWeight       = LumiWeight*PUWeight;
 
     basicselection.Fill( itau, iLep, eventWeight );
 
@@ -194,6 +202,9 @@ int main(int argc, char** argv) {
   //end of analysis code, close and write histograms/file
   fout->cd();
   basicselection.Write();
+  noCut         .Write();
+  passTrigger   .Write();
+  passTau       .Write();
   fout->Close();
 
   std::cout << "Done" << std::endl;
