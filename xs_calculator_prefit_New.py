@@ -158,20 +158,23 @@ def xs_calculator(fileList = [], mass_low = 25, mass_high = 125, nbins = 50, var
         weight = -1.0
         tauWeight = 0.9
         if isData:
-            weight = 1.0
-            tauWeight = 1.0
+                weight = 1.0
+                tauWeight = 1.0
 	for i,iA in enumerate(IsoOrAnti):
         	osName = "%sOS" %(variableName+iA)
        		ssName = "%sSS" %(variableName+iA)
 		#print(osName)
 		#print(ssName)
         	lowBin, highBin = getBins(ifile.Get(osName), mass_low, mass_high)
+		print(mass_low)
+		print(mass_high)
+		print(lowBin)
+		print(highBin)
 		if (i == 0):
 			FillHisto(ifile.Get(osName), histDict[iFileName+'_OST'], tauWeight, mass_low, mass_high)
 			if not isDY:
 				FillHisto(ifile.Get(ssName), histDict['QCD_OST'], weight*tauWeight, mass_low, mass_high)
         		else:
-				print('ok')
 				FillHisto(ifile.Get(ssName), histDict['DY_SST'], tauWeight, mass_low, mass_high)
                         	DY_OST += ifile.Get(osName).Integral(lowBin, highBin)
             	else:
