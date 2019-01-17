@@ -132,9 +132,9 @@ def buildLegendDict(histDict, position, XS_OST):
 def xs_calculator(fileList = [], mass_low = 25, mass_high = 125, nbins = 50, variableName = "visibleMass", binsSetting = [30, 0, 150]):
 
     #print 'Estimating Z->ll xs in visible mass region (%.1f, %.1f)' %(mass_low, mass_high)
-
-    ZTT_OST = 0.0 #data - all other bkg in opposite sign tight tau isolation region
-    QCD_SST = 0.0 #data - all other bkg in same sign tight tau isolation region
+    IsoOrAnti = ["Iso_","antiIso_"]
+    ZTT_OST_IA = [0.0,0.0] #data - all other bkg in opposite sign tight tau isolation region
+    QCD_SST_IA = [0.0,0.0] #data - all other bkg in same sign tight tau isolation region
     DY_OST = 0.0
     DY_SST = 0.0
 
@@ -160,23 +160,26 @@ def xs_calculator(fileList = [], mass_low = 25, mass_high = 125, nbins = 50, var
         if isData:
             weight = 1.0
             tauWeight = 1.0
-
-        osName = "%sOS" %variableName
-        ssName = "%sSS" %variableName
-
-        lowBin, highBin = getBins(ifile.Get(osName), mass_low, mass_high)
-        FillHisto(ifile.Get(osName), histDict[iFileName+'_OST'], tauWeight, mass_low, mass_high)
-
-        if not isDY:
-            ZTT_OST += weight*ifile.Get(osName).Integral(lowBin, highBin)
-            QCD_SST += weight*ifile.Get(ssName).Integral(lowBin, highBin)
-            FillHisto(ifile.Get(ssName), histDict['QCD_OST'], weight*tauWeight, mass_low, mass_high)
-
-        else:
-            FillHisto(ifile.Get(ssName), histDict['DY_SST'], tauWeight, mass_low, mass_high)
-            DY_OST += ifile.Get(osName).Integral(lowBin, highBin)
-
-
+	for i,iA in enumerate(IsoOrAnti):
+        	osName = "%sOS" %(variableName+iA)
+       		ssName = "%sSS" %(variableName+iA)
+		#print(osName)
+		#print(ssName)
+        	lowBin, highBin = getBins(ifile.Get(osName), mass_low, mass_high)
+		if (i == 0):
+			FillHisto(ifile.Get(osName), histDict[iFileName+'_OST'], tauWeight, mass_low, mass_high)
+			if not isDY:
+				FillHisto(ifile.Get(ssName), histDict['QCD_OST'], weight*tauWeight, mass_low, mass_high)
+        		else:
+				print('ok')
+				FillHisto(ifile.Get(ssName), histDict['DY_SST'], tauWeight, mass_low, mass_high)
+                        	DY_OST += ifile.Get(osName).Integral(lowBin, highBin)
+            	else:
+			ZTT_OST_IA[i] += weight*ifile.Get(osName).Integral(lowBin, highBin)
+            		QCD_SST_IA[i] += weight*ifile.Get(ssName).Integral(lowBin, highBin)
+			
+    QCD_SS_to_OS_SF = ZTT_OST_IA[1] / QCD_SST_IA[1]
+    print("Ratio: "+str(QCD_SS_to_OS_SF))
     lowBin, highBin = getBins(histDict['DY_SST'], mass_low, mass_high)
     XS_OST = FoundXS*5765.4
     histDict['QCD_OST'].Add(histDict['DY_SST'], -1.0)
@@ -187,7 +190,7 @@ def xs_calculator(fileList = [], mass_low = 25, mass_high = 125, nbins = 50, var
     #histDict['ZLL_OST'].Scale(2)
     #print 'Hello 2222', histDict['ZLL_OST'].Integral()
     #plot
-    pdf = 'xs.pdf'
+    pdf = dirName+'/xs.pdf'
     c = r.TCanvas("c","Test", 800, 800)
     p_coords = [0., 1, 1., 0.3]
     p_r_coords = [0.,0.3,1.,0.06]
@@ -262,6 +265,6 @@ fileList = [('DY', '%s/DYJetsToTauTau.root' %dirName),
             ('data', '%s/data.root' %dirName),
             ]
 
-variableName = ""
+variableName = "BasicSelection_visMass_"
 bining = []
-xs_calculator(fileList, 40, 120, 30, "visibleMass", [30, 0, 300])
+xs_calculator(fileList, 40, 120, 30, variableName, [30, 0, 300])
